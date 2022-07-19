@@ -1,7 +1,6 @@
 package main
 
 import (
-	"sort"
 	"time"
 
 	"github.com/shirou/gopsutil/v3/cpu"
@@ -147,11 +146,6 @@ func extractProcessesInfo() []processInfo {
 			ExeP:          exeP,
 		})
 	}
-
-	sort.Sort(sort.Reverse(byCpuUsage(processes)))
-
-	// Extract first 20 processes.
-	processes = processes[:20]
 
 	return processes
 }

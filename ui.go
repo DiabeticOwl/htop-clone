@@ -3,9 +3,11 @@ package main
 import (
 	"fmt"
 	"math"
+	"sort"
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -21,6 +23,9 @@ type model struct {
 	SMemoryInfo swapMemoryInfo
 	Processes   []processInfo
 	DisksInfo   []diskInfo
+
+	progresses []progress.Model
+	msgWidth   int
 }
 
 type tickMsg struct{}
@@ -31,7 +36,7 @@ func tick() tea.Cmd {
 	})
 }
 
-func (m model) Init() tea.Cmd {
+func (_ model) Init() tea.Cmd {
 	return tick()
 }
 
@@ -42,14 +47,49 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	switch msg.(type) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		for i := range m.progresses {
+			m.progresses[i].Width = int(float64(msg.Width) * 0.15)
+		}
+
+		m.msgWidth = msg.Width
+
+		return m, nil
+
 	case tickMsg:
 		m.CpuInfo = extractCpuInfo(interval)
 		m.VMemoryInfo, m.SMemoryInfo = extractMemoryInfo()
 		m.DisksInfo = extractDiskInfo()
 		m.Processes = extractProcessesInfo()
 
-		return m, tick()
+		cmds := []tea.Cmd{
+			tick(),
+		}
+
+		for i := range m.progresses {
+			cmds = append(cmds, m.progresses[i].SetPercent(m.CpuInfo[i]/100))
+		}
+
+		sort.Sort(sort.Reverse(byCpuUsage(m.Processes)))
+
+		// Extract first 20 processes.
+		m.Processes = m.Processes[:20]
+
+		return m, tea.Batch(cmds...)
+
+	// FrameMsg is sent when the progress bar wants to animate itself
+	case progress.FrameMsg:
+		var cmds []tea.Cmd
+
+		for i := range m.progresses {
+			progressModel, cmd := m.progresses[i].Update(msg)
+			m.progresses[i] = progressModel.(progress.Model)
+
+			cmds = append(cmds, cmd)
+		}
+
+		return m, tea.Batch(cmds...)
 	}
 
 	// Return the updated model and no command is left to run.
@@ -57,19 +97,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	// // Application's header.
-	// s := "\n************ Cpu info. ************\n"
-	// s += "| "
-	// sCpu := "| "
-
-	// for i := 0; i < len(m.CpuInfo); i++ {
-	// 	s += fmt.Sprintf("CPU #%d Usage | ", i)
-	// 	sCpu += fmt.Sprintf("\t %.2f%%|", m.CpuInfo[i])
-	// }
-
-	// s += "\n"
-	// s += sCpu + "\n"
-	// s += "\n************ Cpu info. ************\n"
 	s := cpuTableView(m)
 
 	s += "\n************ Memory info. ************\n"
@@ -120,73 +147,33 @@ func (m model) View() string {
 }
 
 func cpuTableView(m model) string {
-	// Width of each column. Establishing 3 columns per row.
-	columnLengths := make([]int, 3)
 	// The amount of rows will be the amount of cpu divided by 3.
 	rowCount := int(math.Ceil(float64(len(m.CpuInfo)) / 3))
 
-	cpuTable := make([][]string, rowCount)
-	for i := 0; i < rowCount; i++ {
-		cpuTable[i] = make([]string, 3)
-	}
+	// Title.
+	t := " CPU Usage Percentage "
+	tPad := strings.Repeat("-", int(float64(m.msgWidth)*0.35))
+
+	sTable := fmt.Sprintf("•%s%s%s•\n", tPad, t, tPad)
 
 	// A counter is used to assign each value of the m.CpuInfo slice
 	// to its respective index in the cpuTable matrix.
 	var counter int
-	for c := range columnLengths {
+	for c := 0; c < 3; c++ {
 		for r := 0; r < rowCount; r++ {
-			valStr := "CPU #%d: %.2f%%"
-			cpuTable[r][c] = fmt.Sprintf(valStr, counter, m.CpuInfo[counter])
+			valStr := " CPU #%d: %s\t"
+			sTable += fmt.Sprintf(valStr, counter, m.progresses[counter].View())
 
 			counter++
-		}
-	}
 
-	// Establishing the largest width in each column.
-	for _, r := range cpuTable {
-		for i, val := range r {
-			if len(val) > columnLengths[i] {
-				columnLengths[i] = len(val)
+			if r == rowCount-1 {
+				sTable += "\n"
 			}
 		}
 	}
 
-	var rowLength int
-	for _, c := range columnLengths {
-		rowLength += c + 3 // + 3 For extra padding in each value.
-	}
-	rowLength += 1 // +1 For the last "|" in each row.
-
-	// If there is nothing to show the default value of rowLength will
-	// be columnCount ^ 2 + 1.
-	if rowLength == 10 {
-		return ""
-	}
-
-	// Title.
-	t := " CPU Usage Percentage "
-	tLen := len(t)
-	tPad := strings.Repeat("-", (rowLength-2)/2-tLen/2)
-
-	sTable := fmt.Sprintf("•%s%s%s•\n", tPad, t, tPad)
-
-	for i, row := range cpuTable {
-		for j, val := range row {
-			// Formats each row with the corresponding width and value.
-			sTable += fmt.Sprintf("| %-*s ", columnLengths[j], val)
-
-			// If j corresponds to the last column, add the last
-			// decoration to the row.
-			if j == len(row)-1 {
-				sTable += "|\n"
-			}
-		}
-
-		// After formatting the header and all rows, formats the footer.
-		if i == len(cpuTable)-1 {
-			sTable += fmt.Sprintf("•%s•\n", strings.Repeat("-", rowLength-2))
-		}
-	}
+	tPad = strings.Repeat("-", int(float64(m.msgWidth)*0.35)*2+len(t))
+	sTable += fmt.Sprintf("•%s•\n", tPad)
 
 	return sTable
 }
