@@ -1,7 +1,7 @@
 package main
 
 import (
-	"strings"
+	"sort"
 	"time"
 
 	"github.com/shirou/gopsutil/v3/cpu"
@@ -21,6 +21,16 @@ const (
 	GB
 )
 
+var (
+	desiredFileSystems = map[string]struct{}{
+		"ext4":    {},
+		"vfat":    {},
+		"fuseblk": {},
+		"ntfs":    {},
+		"fat32":   {},
+	}
+)
+
 type processInfo struct {
 	PId           int32
 	User          string
@@ -29,7 +39,10 @@ type processInfo struct {
 	Niceness      int32
 	CpuPercentage float64
 	Cmdline       string
+	ExeP          string
 }
+
+type byCpuUsage []processInfo
 
 type diskInfo struct {
 	Device    string
@@ -51,6 +64,14 @@ type swapMemoryInfo struct {
 	Used        float64
 	Free        float64
 	UsedPercent float64
+}
+
+// Functions for sorting the slice of processes.
+
+func (a byCpuUsage) Len() int      { return len(a) }
+func (a byCpuUsage) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a byCpuUsage) Less(i, j int) bool {
+	return a[i].CpuPercentage < a[j].CpuPercentage
 }
 
 func extractCpuInfo(interval time.Duration) []float64 {
@@ -85,8 +106,8 @@ func extractDiskInfo() []diskInfo {
 
 	dps, _ := disk.Partitions(true)
 	for _, dsk := range dps {
-		mount := dsk.Mountpoint
-		if mount == "/" || strings.HasPrefix(mount, "/media/") {
+		if _, ok := desiredFileSystems[dsk.Fstype]; ok {
+			mount := dsk.Mountpoint
 			dskUsg, _ := disk.Usage(mount)
 
 			disks = append(disks, diskInfo{
@@ -109,23 +130,28 @@ func extractProcessesInfo() []processInfo {
 	for _, p := range ps {
 		u, _ := p.Username()
 		n, _ := p.Name()
-		prio, _ := p.IOnice()
-		nice, _ := p.Nice()
+		prio, _ := p.Nice()
+		nice, _ := p.IOnice()
 		cPcg, _ := p.CPUPercent()
+		exeP, _ := p.Exe()
 		cmdL, _ := p.Cmdline()
 
-		if n == "spotify" {
-			processes = append(processes, processInfo{
-				PId:           p.Pid,
-				User:          u,
-				Name:          n,
-				Priority:      prio,
-				Niceness:      nice,
-				CpuPercentage: cPcg,
-				Cmdline:       cmdL,
-			})
-		}
+		processes = append(processes, processInfo{
+			PId:           p.Pid,
+			User:          u,
+			Name:          n,
+			Priority:      prio,
+			Niceness:      nice,
+			CpuPercentage: cPcg,
+			Cmdline:       cmdL,
+			ExeP:          exeP,
+		})
 	}
+
+	sort.Sort(sort.Reverse(byCpuUsage(processes)))
+
+	// Extract first 20 processes.
+	processes = processes[:20]
 
 	return processes
 }
