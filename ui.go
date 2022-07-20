@@ -4,15 +4,31 @@ import (
 	"fmt"
 	"math"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/evertras/bubble-table/table"
 )
 
 const (
 	interval time.Duration = time.Second
+
+	cpuTableTitle           = "CPU Usage Percentage"
+	cpuTableMaxColumnAmount = 3
+
+	// https://pkg.go.dev/github.com/evertras/bubble-table@v0.14.4/table?utm_source=gopls#NewFlexColumn
+	columnStandardFlexFactor = 1
+	columnKeyCpuTable        = "cpuTable"
+)
+
+var (
+	styleBase = (lipgloss.
+		NewStyle().
+		Foreground(lipgloss.Color("#a7a")).
+		BorderBackground(lipgloss.Color("#a38")).
+		Align(lipgloss.Center))
 )
 
 type model struct {
@@ -26,6 +42,73 @@ type model struct {
 
 	progresses []progress.Model
 	msgWidth   int
+
+	cpuTable table.Model
+}
+
+func newCpuTable() table.Model {
+	columns := []table.Column{
+		table.NewFlexColumn(columnKeyCpuTable, cpuTableTitle,
+			columnStandardFlexFactor),
+	}
+
+	return (table.
+		New(columns).
+		BorderRounded().
+		WithBaseStyle(styleBase).
+		WithTargetWidth(180))
+}
+
+func (m model) generateCpuTableData() []table.Row {
+	valStr := "CPU #%d: %s "
+	rowCount := int(math.Ceil(float64(len(m.CpuInfo)) / cpuTableMaxColumnAmount))
+
+	if rowCount*cpuTableMaxColumnAmount != len(m.CpuInfo) {
+		s := fmt.Sprintf(`The amount of columns or rows is incorrect.
+		The product of both should be %d.`, len(m.CpuInfo))
+
+		panic(s)
+	}
+
+	var rows []table.Row
+	for i := 0; i < rowCount; i++ {
+		r := ""
+		for c := 0; c < cpuTableMaxColumnAmount; c++ {
+			if c > 0 {
+				// index of the row + index of the column * the amount of values
+				// in one column.
+				index := i + c*rowCount
+				r += fmt.Sprintf(valStr, index, m.progresses[index].View())
+			} else {
+				r += fmt.Sprintf(valStr, i, m.progresses[i].View())
+			}
+		}
+
+		nRow := table.NewRow(table.RowData{
+			columnKeyCpuTable: r,
+		}).WithStyle(lipgloss.NewStyle())
+		rows = append(rows, nRow)
+	}
+
+	return rows
+}
+
+func NewModel() model {
+	teaModel := model{
+		CpuInfo:  extractCpuInfo(),
+		cpuTable: newCpuTable(),
+	}
+	for range teaModel.CpuInfo {
+		opts := []progress.Option{
+			progress.WithDefaultGradient(),
+		}
+		pBar := progress.New(opts...)
+		pBar.PercentFormat = " %.2f%%"
+
+		teaModel.progresses = append(teaModel.progresses, pBar)
+	}
+
+	return teaModel
 }
 
 type tickMsg struct{}
@@ -47,6 +130,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
+	var cmds []tea.Cmd
+	var cmd tea.Cmd
+
+	m.cpuTable, cmd = m.cpuTable.Update(msg)
+	cmds = append(cmds, cmd)
+
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		for i := range m.progresses {
@@ -55,17 +144,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.msgWidth = msg.Width
 
-		return m, nil
+		return m, tea.Batch(cmds...)
 
 	case tickMsg:
-		m.CpuInfo = extractCpuInfo(interval)
+		m.CpuInfo = extractCpuInfo()
 		m.VMemoryInfo, m.SMemoryInfo = extractMemoryInfo()
 		m.DisksInfo = extractDiskInfo()
 		m.Processes = extractProcessesInfo()
 
-		cmds := []tea.Cmd{
-			tick(),
-		}
+		cmds = append(cmds, tick())
 
 		for i := range m.progresses {
 			cmds = append(cmds, m.progresses[i].SetPercent(m.CpuInfo[i]/100))
@@ -75,6 +162,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Extract first 20 processes.
 		m.Processes = m.Processes[:20]
+
+		m.cpuTable = m.cpuTable.WithRows(m.generateCpuTableData())
 
 		return m, tea.Batch(cmds...)
 
@@ -93,11 +182,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	// Return the updated model and no command is left to run.
-	return m, nil
+	return m, tea.Batch(cmds...)
 }
 
 func (m model) View() string {
-	s := cpuTableView(m)
+	s := lipgloss.NewStyle().Padding(1).Render(m.cpuTable.View() + "\n")
+	// s := lipgloss.NewStyle().Render(cpuTableView)
+	// s := cpuTableView(m)
 
 	s += "\n************ Memory info. ************\n"
 
@@ -144,36 +235,4 @@ func (m model) View() string {
 
 	// Send the UI for rendering.
 	return s
-}
-
-func cpuTableView(m model) string {
-	// The amount of rows will be the amount of cpu divided by 3.
-	rowCount := int(math.Ceil(float64(len(m.CpuInfo)) / 3))
-
-	// Title.
-	t := " CPU Usage Percentage "
-	tPad := strings.Repeat("-", int(float64(m.msgWidth)*0.35))
-
-	sTable := fmt.Sprintf("•%s%s%s•\n", tPad, t, tPad)
-
-	// A counter is used to assign each value of the m.CpuInfo slice
-	// to its respective index in the cpuTable matrix.
-	var counter int
-	for c := 0; c < 3; c++ {
-		for r := 0; r < rowCount; r++ {
-			valStr := " CPU #%d: %s\t"
-			sTable += fmt.Sprintf(valStr, counter, m.progresses[counter].View())
-
-			counter++
-
-			if r == rowCount-1 {
-				sTable += "\n"
-			}
-		}
-	}
-
-	tPad = strings.Repeat("-", int(float64(m.msgWidth)*0.35)*2+len(t))
-	sTable += fmt.Sprintf("•%s•\n", tPad)
-
-	return sTable
 }

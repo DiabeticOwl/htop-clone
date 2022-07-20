@@ -1,8 +1,6 @@
 package main
 
 import (
-	"time"
-
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/mem"
@@ -73,7 +71,7 @@ func (a byCpuUsage) Less(i, j int) bool {
 	return a[i].CpuPercentage < a[j].CpuPercentage
 }
 
-func extractCpuInfo(interval time.Duration) []float64 {
+func extractCpuInfo() []float64 {
 	cpuInfo, _ := cpu.Percent(0, true)
 	return cpuInfo
 }
