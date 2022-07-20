@@ -40,15 +40,15 @@ func NewModel() model {
 		memoryTable: newMemoryTable(),
 		disksTable:  newDisksTable(),
 	}
-	for range teaModel.CpuInfo {
-		opts := []progress.Option{
-			progress.WithDefaultGradient(),
-		}
-		pBar := progress.New(opts...)
-		pBar.PercentFormat = " %.2f%%"
+	// for range teaModel.CpuInfo {
+	// 	opts := []progress.Option{
+	// 		progress.WithDefaultGradient(),
+	// 	}
+	// 	pBar := progress.New(opts...)
+	// 	pBar.PercentFormat = " %.2f%%"
 
-		teaModel.progresses = append(teaModel.progresses, pBar)
-	}
+	// 	teaModel.progresses = append(teaModel.progresses, pBar)
+	// }
 
 	pCount := int(math.Ceil(float64(len(teaModel.Processes)) / 20))
 	teaModel.processesTable = newProcessesTable(pCount)
@@ -92,9 +92,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		for i := range m.progresses {
-			m.progresses[i].Width = int(float64(msg.Width) * 0.15)
-		}
+		// for i := range m.progresses {
+		// 	m.progresses[i].Width = int(float64(msg.Width) * 0.15)
+		// }
 
 		m.msgWidth = msg.Width
 
