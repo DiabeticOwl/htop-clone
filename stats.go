@@ -26,50 +26,31 @@ var (
 		"ntfs":    {},
 		"fat32":   {},
 	}
+
+	virtualMemoryInfo = make(map[string]interface{})
+	swapMemoryInfo    = make(map[string]interface{})
 )
 
-type processInfo struct {
-	PId           int32
-	User          string
-	Name          string
-	Priority      int32
-	Niceness      int32
-	CpuPercentage float64
-	Cmdline       string
-	ExeP          string
-}
+// type processInfo struct {
+// 	PId           int32
+// 	User          string
+// 	Name          string
+// 	Priority      int32
+// 	Niceness      int32
+// 	CpuPercentage float64
+// 	Cmdline       string
+// 	ExeP          string
+// }
 
-type byCpuUsage []processInfo
+// type byCpuUsage []processInfo
 
-type diskInfo struct {
-	Device    string
-	MountPath string
-	TotalSize float64
-	FreeSize  float64
-	UsedSize  float64
-}
+// // Functions for sorting the slice of processes.
 
-type virtualMemoryInfo struct {
-	Total       float64
-	Used        float64
-	Available   float64
-	UsedPercent float64
-}
-
-type swapMemoryInfo struct {
-	Total       float64
-	Used        float64
-	Free        float64
-	UsedPercent float64
-}
-
-// Functions for sorting the slice of processes.
-
-func (a byCpuUsage) Len() int      { return len(a) }
-func (a byCpuUsage) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a byCpuUsage) Less(i, j int) bool {
-	return a[i].CpuPercentage < a[j].CpuPercentage
-}
+// func (a byCpuUsage) Len() int      { return len(a) }
+// func (a byCpuUsage) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+// func (a byCpuUsage) Less(i, j int) bool {
+// 	return a[i].CpuPercentage < a[j].CpuPercentage
+// }
 
 func extractCpuInfo() []float64 {
 	cpuInfo, _ := cpu.Percent(0, true)
@@ -77,29 +58,25 @@ func extractCpuInfo() []float64 {
 }
 
 // extractMemoryInfo returns virtual and swap memory.
-func extractMemoryInfo() (virtualMemoryInfo, swapMemoryInfo) {
+func extractMemoryInfo() (map[string]interface{}, map[string]interface{}) {
 	vm, _ := mem.VirtualMemory()
 	sm, _ := mem.SwapMemory()
 
-	vM := virtualMemoryInfo{
-		Total:       float64(vm.Total) / GB,
-		Used:        float64(vm.Used) / GB,
-		Available:   float64(vm.Available) / GB,
-		UsedPercent: vm.UsedPercent,
-	}
+	virtualMemoryInfo["Total"] = float64(vm.Total) / GB
+	virtualMemoryInfo["Used"] = float64(vm.Used) / GB
+	virtualMemoryInfo["Available"] = float64(vm.Available) / GB
+	virtualMemoryInfo["UsedPercent"] = vm.UsedPercent
 
-	sM := swapMemoryInfo{
-		Total:       float64(sm.Total) / GB,
-		Used:        float64(sm.Used) / GB,
-		Free:        float64(sm.Free) / GB,
-		UsedPercent: sm.UsedPercent,
-	}
+	swapMemoryInfo["Total"] = float64(sm.Total) / GB
+	swapMemoryInfo["Used"] = float64(sm.Used) / GB
+	swapMemoryInfo["Free"] = float64(sm.Free) / GB
+	swapMemoryInfo["UsedPercent"] = sm.UsedPercent
 
-	return vM, sM
+	return virtualMemoryInfo, swapMemoryInfo
 }
 
-func extractDiskInfo() []diskInfo {
-	var disks []diskInfo
+func extractDiskInfo() []map[string]interface{} {
+	var disks []map[string]interface{}
 
 	dps, _ := disk.Partitions(true)
 	for _, dsk := range dps {
@@ -107,24 +84,29 @@ func extractDiskInfo() []diskInfo {
 			mount := dsk.Mountpoint
 			dskUsg, _ := disk.Usage(mount)
 
-			disks = append(disks, diskInfo{
-				Device:    dsk.Device,
-				MountPath: mount,
-				TotalSize: float64(dskUsg.Total) / GB,
-				FreeSize:  float64(dskUsg.Free) / GB,
-				UsedSize:  float64(dskUsg.Used) / GB,
-			})
+			diskInfo := make(map[string]interface{})
+
+			diskInfo["FsType"] = dsk.Fstype
+			diskInfo["Device"] = dsk.Device
+			diskInfo["MountPath"] = mount
+			diskInfo["TotalSize"] = float64(dskUsg.Total) / GB
+			diskInfo["FreeSize"] = float64(dskUsg.Free) / GB
+			diskInfo["UsedSize"] = float64(dskUsg.Used) / GB
+
+			disks = append(disks, diskInfo)
 		}
 	}
 
 	return disks
 }
 
-func extractProcessesInfo() []processInfo {
+func extractProcessesInfo() []map[string]interface{} {
 	ps, _ := process.Processes()
-	var processes []processInfo
+	var processes []map[string]interface{}
 
 	for _, p := range ps {
+		processInfo := make(map[string]interface{})
+
 		u, _ := p.Username()
 		n, _ := p.Name()
 		prio, _ := p.Nice()
@@ -133,16 +115,16 @@ func extractProcessesInfo() []processInfo {
 		exeP, _ := p.Exe()
 		cmdL, _ := p.Cmdline()
 
-		processes = append(processes, processInfo{
-			PId:           p.Pid,
-			User:          u,
-			Name:          n,
-			Priority:      prio,
-			Niceness:      nice,
-			CpuPercentage: cPcg,
-			Cmdline:       cmdL,
-			ExeP:          exeP,
-		})
+		processInfo["PId"] = p.Pid
+		processInfo["User"] = u
+		processInfo["Name"] = n
+		processInfo["Priority"] = prio
+		processInfo["Niceness"] = nice
+		processInfo["CpuPercentage"] = cPcg
+		processInfo["Cmdline"] = cmdL
+		processInfo["ExeP"] = exeP
+
+		processes = append(processes, processInfo)
 	}
 
 	return processes

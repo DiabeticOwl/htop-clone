@@ -6,7 +6,7 @@ require (
 	github.com/charmbracelet/bubbles v0.13.0
 	github.com/charmbracelet/bubbletea v0.22.0
 	github.com/charmbracelet/lipgloss v0.5.0
-	github.com/evertras/bubble-table v0.14.4
+	github.com/evertras/bubble-table v0.14.5
 	github.com/shirou/gopsutil/v3 v3.22.6
 )
 
