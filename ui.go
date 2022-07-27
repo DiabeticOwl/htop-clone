@@ -24,7 +24,6 @@ type model struct {
 	DisksInfo   []map[string]interface{}
 
 	progresses []progress.Model
-	msgWidth   int
 
 	cpuTable       table.Model
 	memoryTable    table.Model
@@ -96,8 +95,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.progresses[i].Width = int(float64(msg.Width) * 0.15)
 		}
 
-		m.msgWidth = msg.Width
-
 		return m, tea.Batch(cmds...)
 
 	case tickMsg:
@@ -121,10 +118,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	s := lipgloss.NewStyle().Padding(1).Render(m.cpuTable.View() + "\n")
-	s += lipgloss.NewStyle().Padding(1).Render(m.memoryTable.View() + "\n")
-	s += lipgloss.NewStyle().Padding(1).Render(m.disksTable.View() + "\n")
-	s += lipgloss.NewStyle().Padding(1).Render(m.processesTable.View() + "\n")
+	s := lipgloss.NewStyle().Padding(1).Render(m.cpuTable.View())
+	s += lipgloss.NewStyle().Padding(1).Render(m.memoryTable.View())
+	s += lipgloss.NewStyle().Padding(1).Render(m.disksTable.View())
+	s += lipgloss.NewStyle().Padding(1).Render(m.processesTable.View())
 
 	// Applications's footer.
 	s += "\nPress q or Ctrl+C to exit.\n"

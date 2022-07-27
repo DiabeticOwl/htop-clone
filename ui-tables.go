@@ -36,8 +36,8 @@ const (
 var (
 	styleBase = (lipgloss.
 			NewStyle().
-			Foreground(lipgloss.Color("#a7a")).
-			BorderBackground(lipgloss.Color("#a38")).
+			Foreground(lipgloss.Color("#c1d0e8")).
+			BorderBackground(lipgloss.Color("#7a89a3")).
 			Align(lipgloss.Center))
 
 	// * Disks Table *
@@ -241,14 +241,14 @@ func newProcessesTable(pCount int) table.Model {
 		columns = append(columns, nCol)
 	}
 
-	return (table.
+	return table.
 		New(columns).
 		BorderRounded().
 		WithBaseStyle(styleBase).
 		WithTargetWidth(tableLargestTargetWidth).
 		WithPageSize(pCount).
 		SortByDesc("CpuPercentage").
-		Focused(true))
+		Focused(true)
 }
 
 func generateProcessesTableRows(m model) []table.Row {
