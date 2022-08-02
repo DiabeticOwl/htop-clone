@@ -2,6 +2,7 @@ package main
 
 import (
 	"math"
+	"strconv"
 	"time"
 
 	"github.com/charmbracelet/bubbles/progress"
@@ -23,34 +24,51 @@ type model struct {
 	Processes   []map[string]interface{}
 	DisksInfo   []map[string]interface{}
 
-	progresses []progress.Model
+	cpuProgresses    []progress.Model
+	memoryProgresses []progress.Model
 
 	cpuTable       table.Model
 	memoryTable    table.Model
 	disksTable     table.Model
 	processesTable table.Model
+
+	// Window's width.
+	Width  int
+	Height int
 }
 
 func NewModel() model {
+	vMemoryInfo, sMemoryInfo := extractMemoryInfo()
+
 	teaModel := model{
 		CpuInfo:     extractCpuInfo(),
 		Processes:   extractProcessesInfo(),
-		cpuTable:    newCpuTable(),
-		memoryTable: newMemoryTable(),
-		disksTable:  newDisksTable(),
+		VMemoryInfo: vMemoryInfo,
+		SMemoryInfo: sMemoryInfo,
+	}
+
+	opts := []progress.Option{
+		progress.WithDefaultGradient(),
 	}
 	for range teaModel.CpuInfo {
-		opts := []progress.Option{
-			progress.WithDefaultGradient(),
-		}
 		pBar := progress.New(opts...)
 		pBar.PercentFormat = " %.2f%%"
 
-		teaModel.progresses = append(teaModel.progresses, pBar)
+		teaModel.cpuProgresses = append(teaModel.cpuProgresses, pBar)
+	}
+
+	opts = append(opts, progress.WithoutPercentage())
+	teaModel.memoryProgresses = []progress.Model{
+		progress.New(opts...), // One for each type of memory.
+		progress.New(opts...),
 	}
 
 	pCount := int(math.Ceil(float64(len(teaModel.Processes)) / 20))
-	teaModel.processesTable = newProcessesTable(pCount)
+	teaModel.processesTable = newProcessesTable(teaModel, pCount)
+
+	teaModel.cpuTable = newCpuTable(teaModel)
+	teaModel.memoryTable = newMemoryTable(teaModel)
+	teaModel.disksTable = newDisksTable(teaModel)
 
 	return teaModel
 }
@@ -91,9 +109,23 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		for i := range m.progresses {
-			m.progresses[i].Width = int(float64(msg.Width) * 0.15)
+		for i := range m.cpuProgresses {
+			m.cpuProgresses[i].Width = int(float64(msg.Width) * 0.15)
 		}
+
+		for i := range m.memoryProgresses {
+			m.memoryProgresses[i].Width = int(float64(msg.Width) * 0.20)
+		}
+
+		m.Width = msg.Width - 2
+		m.Height = msg.Height
+
+		pCount := int(math.Ceil(float64(len(m.Processes)) / 20))
+		m.processesTable = newProcessesTable(m, pCount)
+
+		m.cpuTable = newCpuTable(m)
+		m.memoryTable = newMemoryTable(m)
+		m.disksTable = newDisksTable(m)
 
 		return m, tea.Batch(cmds...)
 
@@ -121,7 +153,11 @@ func (m model) View() string {
 	s := lipgloss.NewStyle().Padding(1).Render(m.cpuTable.View())
 	s += lipgloss.NewStyle().Padding(1).Render(m.memoryTable.View())
 	s += lipgloss.NewStyle().Padding(1).Render(m.disksTable.View())
-	s += lipgloss.NewStyle().Padding(1).Render(m.processesTable.View())
+	// TODO: Adjust font size according window's size.
+	s += "\n" + "Width:" + strconv.Itoa(m.Width)
+	s += "\n" + "Height:" + strconv.Itoa(m.Height)
+	// TODO: Adjust amount of processes per page according to window's size.
+	// s += lipgloss.NewStyle().Padding(1).Render(m.processesTable.View())
 
 	// Applications's footer.
 	s += "\nPress q or Ctrl+C to exit.\n"

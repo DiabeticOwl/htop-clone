@@ -10,16 +10,13 @@ import (
 )
 
 const (
-	tableDefaultTargetWidth = 70
-	tableLargeTargetWidth   = 160
-	tableLargestTargetWidth = 250
 	// https://pkg.go.dev/github.com/evertras/bubble-table@v0.14.4/table?utm_source=gopls#NewFlexColumn
 	columnDefaultFlexFactor = 1
 
 	// * CPU Table *
 
 	cpuTableTitle           = "CPU Usage Percentage"
-	cpuTableMaxColumnAmount = 3
+	cpuTableMaxColumnAmount = 4
 
 	columnKeyCpuTable = "cpuTable"
 	// * CPU Table *
@@ -71,17 +68,17 @@ var (
 
 // * CPU Table *
 
-func newCpuTable() table.Model {
+func newCpuTable(m model) table.Model {
 	columns := []table.Column{
 		table.NewFlexColumn(columnKeyCpuTable, cpuTableTitle,
 			columnDefaultFlexFactor),
 	}
 
-	return (table.
+	return table.
 		New(columns).
 		BorderRounded().
 		WithBaseStyle(styleBase).
-		WithTargetWidth(tableLargestTargetWidth))
+		WithTargetWidth(m.Width)
 }
 
 func generateCpuTableRows(m model) []table.Row {
@@ -103,9 +100,9 @@ func generateCpuTableRows(m model) []table.Row {
 				// index of the row + index of the column * the amount of values
 				// in one column.
 				index := i + c*rowCount
-				r += fmt.Sprintf("%-20s ", fmt.Sprintf(valStr, index, m.progresses[index].ViewAs(m.CpuInfo[i]/100)))
+				r += fmt.Sprintf("%-20s ", fmt.Sprintf(valStr, index, m.cpuProgresses[index].ViewAs(m.CpuInfo[i]/100)))
 			} else {
-				r += fmt.Sprintf("%-20s ", fmt.Sprintf(valStr, i, m.progresses[i].ViewAs(m.CpuInfo[i]/100)))
+				r += fmt.Sprintf("%-20s ", fmt.Sprintf(valStr, i, m.cpuProgresses[i].ViewAs(m.CpuInfo[i]/100)))
 			}
 		}
 
@@ -122,7 +119,7 @@ func generateCpuTableRows(m model) []table.Row {
 
 // * Memory Table *
 
-func newMemoryTable() table.Model {
+func newMemoryTable(m model) table.Model {
 	columns := []table.Column{
 		table.NewFlexColumn(columnKeyVirtualMemory, columnKeyVirtualMemoryTitle,
 			columnDefaultFlexFactor),
@@ -130,35 +127,48 @@ func newMemoryTable() table.Model {
 			columnDefaultFlexFactor),
 	}
 
-	return (table.
+	return table.
 		New(columns).
 		BorderRounded().
 		WithBaseStyle(styleBase).
-		WithTargetWidth(tableDefaultTargetWidth))
+		WithTargetWidth(m.Width)
 }
 
 func generateMemoryTableRows(m model) []table.Row {
-	gbFormat := "%s: %.2f GB"
-	pcFormat := "%s: %.4f%%"
+	// gbFormat := "%s: %.2f GB"
+	// pcFormat := "%s: %.4f%%"
 
-	totalM := table.NewRow(table.RowData{
-		columnKeyVirtualMemory: fmt.Sprintf(gbFormat, "Total", m.VMemoryInfo["Total"]),
-		columnKeySwapMemory:    fmt.Sprintf(gbFormat, "Total", m.SMemoryInfo["Total"]),
-	}).WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("255")))
-	usedM := table.NewRow(table.RowData{
-		columnKeyVirtualMemory: fmt.Sprintf(gbFormat, "Used", m.VMemoryInfo["Used"]),
-		columnKeySwapMemory:    fmt.Sprintf(gbFormat, "Used", m.SMemoryInfo["Used"]),
-	}).WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("252")))
-	availableM := table.NewRow(table.RowData{
-		columnKeyVirtualMemory: fmt.Sprintf(gbFormat, "Available", m.VMemoryInfo["Available"]),
-		columnKeySwapMemory:    fmt.Sprintf(gbFormat, "Free", m.SMemoryInfo["Free"]),
-	}).WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("249")))
-	usedPcM := table.NewRow(table.RowData{
-		columnKeyVirtualMemory: fmt.Sprintf(pcFormat, "UsedPercent", m.VMemoryInfo["UsedPercent"]),
-		columnKeySwapMemory:    fmt.Sprintf(pcFormat, "UsedPercent", m.SMemoryInfo["UsedPercent"]),
-	}).WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("246")))
+	// totalM := table.NewRow(table.RowData{
+	// 	columnKeyVirtualMemory: fmt.Sprintf(gbFormat, "Total", m.VMemoryInfo["Total"]),
+	// 	columnKeySwapMemory:    fmt.Sprintf(gbFormat, "Total", m.SMemoryInfo["Total"]),
+	// }).WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("255")))
+	// usedM := table.NewRow(table.RowData{
+	// 	columnKeyVirtualMemory: fmt.Sprintf(gbFormat, "Used", m.VMemoryInfo["Used"]),
+	// 	columnKeySwapMemory:    fmt.Sprintf(gbFormat, "Used", m.SMemoryInfo["Used"]),
+	// }).WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("252")))
+	// availableM := table.NewRow(table.RowData{
+	// 	columnKeyVirtualMemory: fmt.Sprintf(gbFormat, "Available", m.VMemoryInfo["Available"]),
+	// 	columnKeySwapMemory:    fmt.Sprintf(gbFormat, "Free", m.SMemoryInfo["Free"]),
+	// }).WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("249")))
+	// usedPcM := table.NewRow(table.RowData{
+	// 	columnKeyVirtualMemory: fmt.Sprintf(pcFormat, "UsedPercent", m.VMemoryInfo["UsedPercent"]),
+	// 	columnKeySwapMemory:    fmt.Sprintf(pcFormat, "UsedPercent", m.SMemoryInfo["UsedPercent"]),
+	// }).WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("246")))
 
-	rows := []table.Row{totalM, usedM, availableM, usedPcM}
+	// rows := []table.Row{totalM, usedM, availableM, usedPcM}
+
+	vMemoryProg := m.memoryProgresses[0].ViewAs(m.VMemoryInfo["UsedPercent"].(float64) / 100)
+	vMemoryView := fmt.Sprintf("%s %.2f GB/%.2f GB", vMemoryProg, m.VMemoryInfo["Used"], m.VMemoryInfo["Total"])
+
+	sMemoryProg := m.memoryProgresses[1].ViewAs(m.SMemoryInfo["UsedPercent"].(float64) / 100)
+	sMemoryView := fmt.Sprintf("%s %.2f GB/%.2f GB", sMemoryProg, m.SMemoryInfo["Used"], m.SMemoryInfo["Total"])
+
+	rows := []table.Row{
+		table.NewRow(table.RowData{
+			columnKeyVirtualMemory: vMemoryView,
+			columnKeySwapMemory:    sMemoryView,
+		}),
+	}
 
 	return rows
 }
@@ -167,7 +177,7 @@ func generateMemoryTableRows(m model) []table.Row {
 
 // * Disks Table *
 
-func newDisksTable() table.Model {
+func newDisksTable(m model) table.Model {
 	var columns []table.Column
 	columnsOrder := []string{"FsType", "Device", "MountPath", "TotalSize",
 		"FreeSize", "UsedSize"}
@@ -183,13 +193,13 @@ func newDisksTable() table.Model {
 		columns = append(columns, nCol)
 	}
 
-	return (table.
+	return table.
 		New(columns).
 		BorderRounded().
 		WithBaseStyle(styleBase).
-		WithTargetWidth(tableLargeTargetWidth).
+		WithTargetWidth(m.Width).
 		SortByAsc("FsType").
-		ThenSortByAsc("MountPath"))
+		ThenSortByAsc("MountPath")
 }
 
 func generateDisksTableRows(m model) []table.Row {
@@ -221,7 +231,7 @@ func generateDisksTableRows(m model) []table.Row {
 
 // * Processes Table *
 
-func newProcessesTable(pCount int) table.Model {
+func newProcessesTable(m model, pCount int) table.Model {
 	var columns []table.Column
 	columnsOrder := []string{"PId", "User", "Priority", "Niceness",
 		"CpuPercentage", "Name", "ExeP", "Cmdline"}
@@ -245,7 +255,7 @@ func newProcessesTable(pCount int) table.Model {
 		New(columns).
 		BorderRounded().
 		WithBaseStyle(styleBase).
-		WithTargetWidth(tableLargestTargetWidth).
+		WithTargetWidth(m.Width).
 		WithPageSize(pCount).
 		SortByDesc("CpuPercentage").
 		Focused(true)
