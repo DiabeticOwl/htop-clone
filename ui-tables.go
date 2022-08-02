@@ -135,28 +135,6 @@ func newMemoryTable(m model) table.Model {
 }
 
 func generateMemoryTableRows(m model) []table.Row {
-	// gbFormat := "%s: %.2f GB"
-	// pcFormat := "%s: %.4f%%"
-
-	// totalM := table.NewRow(table.RowData{
-	// 	columnKeyVirtualMemory: fmt.Sprintf(gbFormat, "Total", m.VMemoryInfo["Total"]),
-	// 	columnKeySwapMemory:    fmt.Sprintf(gbFormat, "Total", m.SMemoryInfo["Total"]),
-	// }).WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("255")))
-	// usedM := table.NewRow(table.RowData{
-	// 	columnKeyVirtualMemory: fmt.Sprintf(gbFormat, "Used", m.VMemoryInfo["Used"]),
-	// 	columnKeySwapMemory:    fmt.Sprintf(gbFormat, "Used", m.SMemoryInfo["Used"]),
-	// }).WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("252")))
-	// availableM := table.NewRow(table.RowData{
-	// 	columnKeyVirtualMemory: fmt.Sprintf(gbFormat, "Available", m.VMemoryInfo["Available"]),
-	// 	columnKeySwapMemory:    fmt.Sprintf(gbFormat, "Free", m.SMemoryInfo["Free"]),
-	// }).WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("249")))
-	// usedPcM := table.NewRow(table.RowData{
-	// 	columnKeyVirtualMemory: fmt.Sprintf(pcFormat, "UsedPercent", m.VMemoryInfo["UsedPercent"]),
-	// 	columnKeySwapMemory:    fmt.Sprintf(pcFormat, "UsedPercent", m.SMemoryInfo["UsedPercent"]),
-	// }).WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("246")))
-
-	// rows := []table.Row{totalM, usedM, availableM, usedPcM}
-
 	vMemoryProg := m.memoryProgresses[0].ViewAs(m.VMemoryInfo["UsedPercent"].(float64) / 100)
 	vMemoryView := fmt.Sprintf("%s %.2f GB/%.2f GB", vMemoryProg, m.VMemoryInfo["Used"], m.VMemoryInfo["Total"])
 
