@@ -2,7 +2,6 @@ package main
 
 import (
 	"math"
-	"strconv"
 	"time"
 
 	"github.com/charmbracelet/bubbles/progress"
@@ -117,15 +116,27 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.memoryProgresses[i].Width = int(float64(msg.Width) * 0.20)
 		}
 
+		// -2 as an arbitrary margin.
 		m.Width = msg.Width - 2
-		m.Height = msg.Height
+		// m.Height = msg.Height
 
-		pCount := int(math.Ceil(float64(len(m.Processes)) / 20))
-		m.processesTable = newProcessesTable(m, pCount)
+		// -33 as an experimental value for calculating the
+		// amount of processes per page.
+		pCount := msg.Height - 33
+		if pCount <= 0 {
+			pCount = 2
+		}
 
 		m.cpuTable = newCpuTable(m)
-		m.memoryTable = newMemoryTable(m)
-		m.disksTable = newDisksTable(m)
+		if msg.Height <= 20 {
+			m.processesTable = table.New([]table.Column{})
+			m.disksTable = table.New([]table.Column{})
+			m.memoryTable = table.New([]table.Column{})
+		} else {
+			m.processesTable = newProcessesTable(m, pCount)
+			m.disksTable = newDisksTable(m)
+			m.memoryTable = newMemoryTable(m)
+		}
 
 		return m, tea.Batch(cmds...)
 
@@ -153,14 +164,9 @@ func (m model) View() string {
 	s := lipgloss.NewStyle().Padding(1).Render(m.cpuTable.View())
 	s += lipgloss.NewStyle().Padding(1).Render(m.memoryTable.View())
 	s += lipgloss.NewStyle().Padding(1).Render(m.disksTable.View())
-	// TODO: Adjust font size according window's size.
-	s += "\n" + "Width:" + strconv.Itoa(m.Width)
-	s += "\n" + "Height:" + strconv.Itoa(m.Height)
-	// TODO: Adjust amount of processes per page according to window's size.
-	// s += lipgloss.NewStyle().Padding(1).Render(m.processesTable.View())
-
-	// Applications's footer.
-	s += "\nPress q or Ctrl+C to exit.\n"
+	s += lipgloss.NewStyle().Padding(1).Render(m.processesTable.View())
+	// s += "\n" + "Width:" + strconv.Itoa(m.Width)
+	// s += "\n" + "Height:" + strconv.Itoa(m.Height)
 
 	// Send the UI for rendering.
 	return s

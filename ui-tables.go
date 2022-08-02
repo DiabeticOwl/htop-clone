@@ -86,8 +86,8 @@ func generateCpuTableRows(m model) []table.Row {
 	rowCount := int(math.Ceil(float64(len(m.CpuInfo)) / cpuTableMaxColumnAmount))
 
 	if rowCount*cpuTableMaxColumnAmount != len(m.CpuInfo) {
-		s := fmt.Sprintf(`The amount of columns or rows is incorrect.
-		The product of both should be %d.`, len(m.CpuInfo))
+		s := "The amount of columns or rows is incorrect.\n"
+		s = fmt.Sprintf("%sThe product of both should be %d.", s, len(m.CpuInfo))
 
 		panic(s)
 	}
