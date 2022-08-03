@@ -25,6 +25,7 @@ var (
 		"fuseblk": {},
 		"ntfs":    {},
 		"fat32":   {},
+		"apfs":    {},
 	}
 
 	virtualMemoryInfo = make(map[string]interface{})
@@ -89,7 +90,6 @@ func extractProcessesInfo() []map[string]interface{} {
 		u, _ := p.Username()
 		n, _ := p.Name()
 		prio, _ := p.Nice()
-		nice, _ := p.IOnice()
 		cPcg, _ := p.CPUPercent()
 		exeP, _ := p.Exe()
 		cmdL, _ := p.Cmdline()
@@ -98,7 +98,6 @@ func extractProcessesInfo() []map[string]interface{} {
 		processInfo["User"] = u
 		processInfo["Name"] = n
 		processInfo["Priority"] = prio
-		processInfo["Niceness"] = nice
 		processInfo["CpuPercentage"] = cPcg
 		processInfo["Cmdline"] = cmdL
 		processInfo["ExeP"] = exeP

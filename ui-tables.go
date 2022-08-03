@@ -57,7 +57,6 @@ var (
 		"PId":           "Process ID",
 		"User":          "Username",
 		"Priority":      "Priority",
-		"Niceness":      "Nice",
 		"CpuPercentage": "CPU Usage Percentage",
 		"Name":          "Name",
 		"ExeP":          "Executable Path",
@@ -211,7 +210,7 @@ func generateDisksTableRows(m model) []table.Row {
 
 func newProcessesTable(m model, pCount int) table.Model {
 	var columns []table.Column
-	columnsOrder := []string{"PId", "User", "Priority", "Niceness",
+	columnsOrder := []string{"PId", "User", "Priority",
 		"CpuPercentage", "Name", "ExeP", "Cmdline"}
 
 	for _, column := range columnsOrder {

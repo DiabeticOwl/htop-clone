@@ -118,7 +118,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// -2 as an arbitrary margin.
 		m.Width = msg.Width - 2
-		// m.Height = msg.Height
 
 		// -33 as an experimental value for calculating the
 		// amount of processes per page.
@@ -165,8 +164,6 @@ func (m model) View() string {
 	s += lipgloss.NewStyle().Padding(1).Render(m.memoryTable.View())
 	s += lipgloss.NewStyle().Padding(1).Render(m.disksTable.View())
 	s += lipgloss.NewStyle().Padding(1).Render(m.processesTable.View())
-	// s += "\n" + "Width:" + strconv.Itoa(m.Width)
-	// s += "\n" + "Height:" + strconv.Itoa(m.Height)
 
 	// Send the UI for rendering.
 	return s
