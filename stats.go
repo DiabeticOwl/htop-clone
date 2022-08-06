@@ -27,10 +27,32 @@ var (
 		"fat32":   {},
 		"apfs":    {},
 	}
-
-	virtualMemoryInfo = make(map[string]interface{})
-	swapMemoryInfo    = make(map[string]interface{})
 )
+
+type memoryInfo struct {
+	Total       float64
+	Used        float64
+	UsedPercent float64
+}
+
+type diskInfo struct {
+	FsType    string
+	Device    string
+	MountPath string
+	TotalSize float64
+	FreeSize  float64
+	UsedSize  float64
+}
+
+type processInfo struct {
+	PId           int32
+	User          string
+	Name          string
+	Priority      int32
+	CpuPercentage float64
+	Cmdline       string
+	ExeP          string
+}
 
 func extractCpuInfo() []float64 {
 	cpuInfo, _ := cpu.Percent(0, true)
@@ -38,25 +60,27 @@ func extractCpuInfo() []float64 {
 }
 
 // extractMemoryInfo returns virtual and swap memory.
-func extractMemoryInfo() (map[string]interface{}, map[string]interface{}) {
+func extractMemoryInfo() (memoryInfo, memoryInfo) {
 	vm, _ := mem.VirtualMemory()
 	sm, _ := mem.SwapMemory()
 
-	virtualMemoryInfo["Total"] = float64(vm.Total) / GB
-	virtualMemoryInfo["Used"] = float64(vm.Used) / GB
-	virtualMemoryInfo["Available"] = float64(vm.Available) / GB
-	virtualMemoryInfo["UsedPercent"] = vm.UsedPercent
+	vMemoryInfo := memoryInfo{
+		Total:       float64(vm.Total) / GB,
+		Used:        float64(vm.Used) / GB,
+		UsedPercent: vm.UsedPercent,
+	}
 
-	swapMemoryInfo["Total"] = float64(sm.Total) / GB
-	swapMemoryInfo["Used"] = float64(sm.Used) / GB
-	swapMemoryInfo["Free"] = float64(sm.Free) / GB
-	swapMemoryInfo["UsedPercent"] = sm.UsedPercent
+	sMemoryInfo := memoryInfo{
+		Total:       float64(sm.Total) / GB,
+		Used:        float64(sm.Used) / GB,
+		UsedPercent: sm.UsedPercent,
+	}
 
-	return virtualMemoryInfo, swapMemoryInfo
+	return vMemoryInfo, sMemoryInfo
 }
 
-func extractDiskInfo() []map[string]interface{} {
-	var disks []map[string]interface{}
+func extractDiskInfo() []diskInfo {
+	var disks []diskInfo
 
 	dps, _ := disk.Partitions(true)
 	for _, dsk := range dps {
@@ -64,14 +88,14 @@ func extractDiskInfo() []map[string]interface{} {
 			mount := dsk.Mountpoint
 			dskUsg, _ := disk.Usage(mount)
 
-			diskInfo := make(map[string]interface{})
-
-			diskInfo["FsType"] = dsk.Fstype
-			diskInfo["Device"] = dsk.Device
-			diskInfo["MountPath"] = mount
-			diskInfo["TotalSize"] = float64(dskUsg.Total) / GB
-			diskInfo["FreeSize"] = float64(dskUsg.Free) / GB
-			diskInfo["UsedSize"] = float64(dskUsg.Used) / GB
+			diskInfo := diskInfo{
+				FsType:    dsk.Fstype,
+				Device:    dsk.Device,
+				MountPath: mount,
+				TotalSize: float64(dskUsg.Total) / GB,
+				FreeSize:  float64(dskUsg.Free) / GB,
+				UsedSize:  float64(dskUsg.Used) / GB,
+			}
 
 			disks = append(disks, diskInfo)
 		}
@@ -80,13 +104,11 @@ func extractDiskInfo() []map[string]interface{} {
 	return disks
 }
 
-func extractProcessesInfo() []map[string]interface{} {
+func extractProcessesInfo() []processInfo {
 	ps, _ := process.Processes()
-	var processes []map[string]interface{}
+	var processes []processInfo
 
 	for _, p := range ps {
-		processInfo := make(map[string]interface{})
-
 		u, _ := p.Username()
 		n, _ := p.Name()
 		prio, _ := p.Nice()
@@ -94,13 +116,15 @@ func extractProcessesInfo() []map[string]interface{} {
 		exeP, _ := p.Exe()
 		cmdL, _ := p.Cmdline()
 
-		processInfo["PId"] = p.Pid
-		processInfo["User"] = u
-		processInfo["Name"] = n
-		processInfo["Priority"] = prio
-		processInfo["CpuPercentage"] = cPcg
-		processInfo["Cmdline"] = cmdL
-		processInfo["ExeP"] = exeP
+		processInfo := processInfo{
+			PId:           p.Pid,
+			User:          u,
+			Name:          n,
+			Priority:      prio,
+			CpuPercentage: cPcg,
+			Cmdline:       cmdL,
+			ExeP:          exeP,
+		}
 
 		processes = append(processes, processInfo)
 	}

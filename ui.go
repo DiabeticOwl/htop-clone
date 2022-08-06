@@ -17,11 +17,11 @@ const (
 type model struct {
 	CpuInfo []float64
 	// Virtual Memory.
-	VMemoryInfo map[string]interface{}
+	VMemoryInfo memoryInfo
 	// Swap Memory.
-	SMemoryInfo map[string]interface{}
-	Processes   []map[string]interface{}
-	DisksInfo   []map[string]interface{}
+	SMemoryInfo memoryInfo
+	Processes   []processInfo
+	DisksInfo   []diskInfo
 
 	cpuProgresses    []progress.Model
 	memoryProgresses []progress.Model
@@ -80,7 +80,7 @@ func tick() tea.Cmd {
 	})
 }
 
-func (_ model) Init() tea.Cmd {
+func (model) Init() tea.Cmd {
 	return tick()
 }
 

@@ -10,9 +10,6 @@ import (
 )
 
 const (
-	// https://pkg.go.dev/github.com/evertras/bubble-table@v0.14.4/table?utm_source=gopls#NewFlexColumn
-	columnDefaultFlexFactor = 1
-
 	// * CPU Table *
 
 	cpuTableTitle           = "CPU Usage Percentage"
@@ -30,6 +27,14 @@ const (
 	// * Memory Table *
 )
 
+const (
+	// https://pkg.go.dev/github.com/evertras/bubble-table@v0.14.4/table?utm_source=gopls#NewFlexColumn
+	columnDefaultFlexFactor = 1
+	columnLargerFlexFactor  = iota * 2
+	columnHugeFlexFactor
+	columnLargestFlexFactor
+)
+
 var (
 	styleBase = (lipgloss.
 			NewStyle().
@@ -37,32 +42,7 @@ var (
 			BorderBackground(lipgloss.Color("#7a89a3")).
 			Align(lipgloss.Center))
 
-	// * Disks Table *
-
-	// ColumnKey: ColumnTitle
-	disksColumnKeyMap = map[string]string{
-		"FsType":    "File System Type",
-		"Device":    "Device",
-		"MountPath": "Mount Path",
-		"TotalSize": "Total Size",
-		"FreeSize":  "Free Size",
-		"UsedSize":  "Used Size",
-	}
-	// * Disks Table *
-
-	// * Processes Table *
-
-	// ColumnKey: ColumnTitle
-	processesColumnKeyMap = map[string]string{
-		"PId":           "Process ID",
-		"User":          "Username",
-		"Priority":      "Priority",
-		"CpuPercentage": "CPU Usage Percentage",
-		"Name":          "Name",
-		"ExeP":          "Executable Path",
-		"Cmdline":       "Command",
-	}
-	// * Processes Table *
+	standardRowStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("255"))
 )
 
 // * CPU Table *
@@ -134,11 +114,11 @@ func newMemoryTable(m model) table.Model {
 }
 
 func generateMemoryTableRows(m model) []table.Row {
-	vMemoryProg := m.memoryProgresses[0].ViewAs(m.VMemoryInfo["UsedPercent"].(float64) / 100)
-	vMemoryView := fmt.Sprintf("%s %.2f GB/%.2f GB", vMemoryProg, m.VMemoryInfo["Used"], m.VMemoryInfo["Total"])
+	vMemoryProg := m.memoryProgresses[0].ViewAs(m.VMemoryInfo.UsedPercent / 100)
+	vMemoryView := fmt.Sprintf("%s %.2f GB/%.2f GB", vMemoryProg, m.VMemoryInfo.Used, m.VMemoryInfo.Total)
 
-	sMemoryProg := m.memoryProgresses[1].ViewAs(m.SMemoryInfo["UsedPercent"].(float64) / 100)
-	sMemoryView := fmt.Sprintf("%s %.2f GB/%.2f GB", sMemoryProg, m.SMemoryInfo["Used"], m.SMemoryInfo["Total"])
+	sMemoryProg := m.memoryProgresses[1].ViewAs(m.SMemoryInfo.UsedPercent / 100)
+	sMemoryView := fmt.Sprintf("%s %.2f GB/%.2f GB", sMemoryProg, m.SMemoryInfo.Used, m.SMemoryInfo.Total)
 
 	rows := []table.Row{
 		table.NewRow(table.RowData{
@@ -155,20 +135,14 @@ func generateMemoryTableRows(m model) []table.Row {
 // * Disks Table *
 
 func newDisksTable(m model) table.Model {
-	var columns []table.Column
-	columnsOrder := []string{"FsType", "Device", "MountPath", "TotalSize",
-		"FreeSize", "UsedSize"}
+	fsTypeCol := table.NewFlexColumn("FsType", "File System Type", columnDefaultFlexFactor)
+	deviceCol := table.NewFlexColumn("Device", "Device", columnDefaultFlexFactor)
+	mountPathCol := table.NewFlexColumn("MountPath", "Mount Path", columnHugeFlexFactor)
+	totalSizeCol := table.NewFlexColumn("TotalSize", "Total Size", columnDefaultFlexFactor)
+	freeSizeCol := table.NewFlexColumn("FreeSize", "Free Size", columnDefaultFlexFactor)
+	usedSizeCol := table.NewFlexColumn("UsedSize", "Used Size", columnDefaultFlexFactor)
 
-	for _, column := range columnsOrder {
-		factor := columnDefaultFlexFactor
-		if column == "MountPath" {
-			factor *= 4
-		}
-
-		nCol := table.NewFlexColumn(column, disksColumnKeyMap[column], factor)
-
-		columns = append(columns, nCol)
-	}
+	columns := []table.Column{fsTypeCol, deviceCol, mountPathCol, totalSizeCol, freeSizeCol, usedSizeCol}
 
 	return table.
 		New(columns).
@@ -181,23 +155,18 @@ func newDisksTable(m model) table.Model {
 
 func generateDisksTableRows(m model) []table.Row {
 	var rows []table.Row
-	var format string
-	rowStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("255"))
 
 	for _, disk := range m.DisksInfo {
 		rowData := make(table.RowData)
-		for key, value := range disk {
-			switch value.(type) {
-			case float64:
-				format = "%2.f GB"
-			default:
-				format = "%s"
-			}
 
-			rowData[key] = fmt.Sprintf(format, value)
-		}
+		rowData["FsType"] = disk.FsType
+		rowData["Device"] = disk.Device
+		rowData["MountPath"] = disk.MountPath
+		rowData["TotalSize"] = fmt.Sprintf("%2.f GB", disk.TotalSize)
+		rowData["FreeSize"] = fmt.Sprintf("%2.f GB", disk.FreeSize)
+		rowData["UsedSize"] = fmt.Sprintf("%2.f GB", disk.UsedSize)
 
-		row := table.NewRow(rowData).WithStyle(rowStyle)
+		row := table.NewRow(rowData).WithStyle(standardRowStyle)
 		rows = append(rows, row)
 	}
 
@@ -209,24 +178,18 @@ func generateDisksTableRows(m model) []table.Row {
 // * Processes Table *
 
 func newProcessesTable(m model, pCount int) table.Model {
-	var columns []table.Column
-	columnsOrder := []string{"PId", "User", "Priority",
-		"CpuPercentage", "Name", "ExeP", "Cmdline"}
+	pIdCol := table.NewFlexColumn("PId", "Process ID", columnDefaultFlexFactor)
+	prioCol := table.NewFlexColumn("Priority", "Priority", columnDefaultFlexFactor)
 
-	for _, column := range columnsOrder {
-		factor := columnDefaultFlexFactor
-		if column == "Name" || column == "CpuPercentage" || column == "User" {
-			factor *= 2
-		} else if column == "ExeP" {
-			factor *= 4
-		} else if column == "Cmdline" {
-			factor *= 6
-		}
+	uCol := table.NewFlexColumn("User", "Username", columnLargerFlexFactor)
+	cPcgCol := table.NewFlexColumn("CpuPercentage", "CPU Usage Percentage", columnLargerFlexFactor)
+	nCol := table.NewFlexColumn("Name", "Name", columnLargerFlexFactor)
 
-		nCol := table.NewFlexColumn(column, processesColumnKeyMap[column], factor)
+	exePCol := table.NewFlexColumn("ExeP", "Executable Path", columnHugeFlexFactor)
 
-		columns = append(columns, nCol)
-	}
+	cmdlineCol := table.NewFlexColumn("Cmdline", "Command", columnLargestFlexFactor)
+
+	columns := []table.Column{pIdCol, prioCol, uCol, cPcgCol, nCol, exePCol, cmdlineCol}
 
 	return table.
 		New(columns).
@@ -240,25 +203,19 @@ func newProcessesTable(m model, pCount int) table.Model {
 
 func generateProcessesTableRows(m model) []table.Row {
 	var rows []table.Row
-	var format string
-	rowStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("255"))
 
 	for _, process := range m.Processes {
 		rowData := make(table.RowData)
-		for key, value := range process {
-			switch value.(type) {
-			case int, int32:
-				format = "%d"
-			case float64:
-				format = "%.4f%%"
-			default:
-				format = "%s"
-			}
 
-			rowData[key] = fmt.Sprintf(format, value)
-		}
+		rowData["PId"] = fmt.Sprintf("%d", process.PId)
+		rowData["Priority"] = fmt.Sprintf("%d", process.Priority)
+		rowData["User"] = process.User
+		rowData["CpuPercentage"] = fmt.Sprintf("%.4f%%", process.CpuPercentage)
+		rowData["Name"] = process.Name
+		rowData["ExeP"] = process.ExeP
+		rowData["Cmdline"] = process.Cmdline
 
-		row := table.NewRow(rowData).WithStyle(rowStyle)
+		row := table.NewRow(rowData).WithStyle(standardRowStyle)
 		rows = append(rows, row)
 	}
 
