@@ -1,7 +1,7 @@
+// File that describes the UI/UX that the user will interact with.
 package main
 
 import (
-	"math"
 	"time"
 
 	"github.com/charmbracelet/bubbles/progress"
@@ -32,18 +32,15 @@ type model struct {
 	processesTable table.Model
 
 	// Window's width.
-	Width  int
+	Width int
+	// Window's height.
 	Height int
 }
 
+// NewModel initializes the model that BubbleTea will use.
 func NewModel() model {
-	vMemoryInfo, sMemoryInfo := extractMemoryInfo()
-
 	teaModel := model{
-		CpuInfo:     extractCpuInfo(),
-		Processes:   extractProcessesInfo(),
-		VMemoryInfo: vMemoryInfo,
-		SMemoryInfo: sMemoryInfo,
+		CpuInfo: extractCpuInfo(),
 	}
 
 	opts := []progress.Option{
@@ -61,13 +58,6 @@ func NewModel() model {
 		progress.New(opts...), // One for each type of memory.
 		progress.New(opts...),
 	}
-
-	pCount := int(math.Ceil(float64(len(teaModel.Processes)) / 20))
-	teaModel.processesTable = newProcessesTable(teaModel, pCount)
-
-	teaModel.cpuTable = newCpuTable(teaModel)
-	teaModel.memoryTable = newMemoryTable(teaModel)
-	teaModel.disksTable = newDisksTable(teaModel)
 
 	return teaModel
 }
@@ -88,6 +78,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if msg, ok := msg.(tea.KeyMsg); ok {
 		if k := msg.String(); k == "q" || k == "esc" || k == "ctrl+c" {
 			return m, tea.Quit
+		} else if k == "a" || k == "A" {
+			m.disksTable = m.disksTable.PageUp()
+			return m, nil
+		} else if k == "d" || k == "D" {
+			m.disksTable = m.disksTable.PageDown()
+			return m, nil
 		}
 	}
 
@@ -113,14 +109,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		for i := range m.memoryProgresses {
-			m.memoryProgresses[i].Width = int(float64(msg.Width) * 0.20)
+			m.memoryProgresses[i].Width = int(float64(msg.Width) * 0.15)
 		}
 
 		// -2 as an arbitrary margin.
 		m.Width = msg.Width - 2
+		m.Height = msg.Height
 
-		// -33 as an experimental value for calculating the
-		// amount of processes per page.
+		// -33 as an experimental value for calculating the amount of processes
+		// per page.
 		pCount := msg.Height - 33
 		if pCount <= 0 {
 			pCount = 2
@@ -149,22 +146,28 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.cpuTable = m.cpuTable.WithRows(generateCpuTableRows(m))
 		m.memoryTable = m.memoryTable.WithRows(generateMemoryTableRows(m))
-		m.disksTable = m.disksTable.WithRows(generateDisksTableRows(m))
 		m.processesTable = m.processesTable.WithRows(generateProcessesTableRows(m))
+
+		var pCount int
+		if len(m.DisksInfo) > 2 {
+			pCount = 2
+		}
+		m.disksTable = m.disksTable.WithRows(generateDisksTableRows(m)).WithPageSize(pCount)
 
 		return m, tea.Batch(cmds...)
 	}
 
-	// Return the updated model and no command is left to run.
 	return m, tea.Batch(cmds...)
 }
 
 func (m model) View() string {
-	s := lipgloss.NewStyle().Padding(1).Render(m.cpuTable.View())
+	// Render each component in the UI with its given style.
+	s := lipgloss.NewStyle().Padding(0, 1, 1).Render(m.cpuTable.View())
 	s += lipgloss.NewStyle().Padding(1).Render(m.memoryTable.View())
 	s += lipgloss.NewStyle().Padding(1).Render(m.disksTable.View())
 	s += lipgloss.NewStyle().Padding(1).Render(m.processesTable.View())
+	s += "\n a/d for the disks table. ↑ / ↓ / ← / → for processes table."
 
-	// Send the UI for rendering.
+	// Send the UI for rendering in the terminal screen.
 	return s
 }

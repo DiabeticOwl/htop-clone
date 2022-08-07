@@ -10,21 +10,15 @@ import (
 )
 
 const (
-	// * CPU Table *
-
 	cpuTableTitle           = "CPU Usage Percentage"
 	cpuTableMaxColumnAmount = 4
 
 	columnKeyCpuTable = "cpuTable"
-	// * CPU Table *
-
-	// * Memory Table *
 
 	columnKeyVirtualMemory      = "virtualMemory"
 	columnKeyVirtualMemoryTitle = "Virtual Memory"
 	columnKeySwapMemory         = "swapMemory"
 	columnKeySwapMemoryTitle    = "Swap Memory"
-	// * Memory Table *
 )
 
 const (
@@ -44,8 +38,6 @@ var (
 
 	standardRowStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("255"))
 )
-
-// * CPU Table *
 
 func newCpuTable(m model) table.Model {
 	columns := []table.Column{
@@ -94,10 +86,6 @@ func generateCpuTableRows(m model) []table.Row {
 	return rows
 }
 
-// * CPU Table *
-
-// * Memory Table *
-
 func newMemoryTable(m model) table.Model {
 	columns := []table.Column{
 		table.NewFlexColumn(columnKeyVirtualMemory, columnKeyVirtualMemoryTitle,
@@ -129,10 +117,6 @@ func generateMemoryTableRows(m model) []table.Row {
 
 	return rows
 }
-
-// * Memory Table *
-
-// * Disks Table *
 
 func newDisksTable(m model) table.Model {
 	fsTypeCol := table.NewFlexColumn("FsType", "File System Type", columnDefaultFlexFactor)
@@ -172,10 +156,6 @@ func generateDisksTableRows(m model) []table.Row {
 
 	return rows
 }
-
-// * Disks Table *
-
-// * Processes Table *
 
 func newProcessesTable(m model, pCount int) table.Model {
 	pIdCol := table.NewFlexColumn("PId", "Process ID", columnDefaultFlexFactor)
@@ -221,5 +201,3 @@ func generateProcessesTableRows(m model) []table.Row {
 
 	return rows
 }
-
-// * Processes Table *
