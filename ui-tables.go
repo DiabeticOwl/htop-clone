@@ -22,7 +22,7 @@ const (
 )
 
 const (
-	// https://pkg.go.dev/github.com/evertras/bubble-table@v0.14.4/table?utm_source=gopls#NewFlexColumn
+	// https://pkg.go.dev/github.com/evertras/bubble-table/table?utm_source=gopls#NewFlexColumn
 	columnDefaultFlexFactor = 1
 	columnLargerFlexFactor  = iota * 2
 	columnHugeFlexFactor
