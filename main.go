@@ -5,7 +5,9 @@ package main
 import (
 	"flag"
 	"os"
+	"os/signal"
 	"runtime/pprof"
+	"syscall"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -16,6 +18,12 @@ import (
 var cpuProfile = flag.String("cpuProfile", "", "Writes CPU profile to a file.")
 
 func main() {
+	// Channel that will accept one signal.
+	signChan := make(chan os.Signal, 1)
+	// Sends a SIGTERM signal to the given channel when it is
+	// received by the application.
+	signal.Notify(signChan, syscall.SIGTERM)
+
 	// Parses the flags.
 	flag.Parse()
 	if *cpuProfile != "" {
@@ -29,6 +37,11 @@ func main() {
 	}
 
 	p := tea.NewProgram(NewModel(), tea.WithAltScreen())
+	go func() {
+		if sig := <-signChan; sig != nil {
+			p.Quit()
+		}
+	}()
 	if err := p.Start(); err != nil {
 		panic(err)
 	}
