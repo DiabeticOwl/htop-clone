@@ -162,7 +162,7 @@ func newProcessesTable(m model, pCount int) table.Model {
 	prioCol := table.NewFlexColumn("Priority", "Priority", columnDefaultFlexFactor)
 
 	uCol := table.NewFlexColumn("User", "Username", columnLargerFlexFactor)
-	cPcgCol := table.NewFlexColumn("CpuPercentage", "CPU Usage Percentage", columnLargerFlexFactor)
+	cPcgCol := table.NewFlexColumn("CpuPercentage", "CPU Usage Percentage", columnLargerFlexFactor).WithFormatString("%.1f%%")
 	nCol := table.NewFlexColumn("Name", "Name", columnLargerFlexFactor)
 
 	exePCol := table.NewFlexColumn("ExeP", "Executable Path", columnHugeFlexFactor)
@@ -190,7 +190,7 @@ func generateProcessesTableRows(m model) []table.Row {
 		rowData["PId"] = fmt.Sprintf("%d", process.PId)
 		rowData["Priority"] = fmt.Sprintf("%d", process.Priority)
 		rowData["User"] = process.User
-		rowData["CpuPercentage"] = fmt.Sprintf("%.4f%%", process.CpuPercentage)
+		rowData["CpuPercentage"] = process.CpuPercentage
 		rowData["Name"] = process.Name
 		rowData["ExeP"] = process.ExeP
 		rowData["Cmdline"] = process.Cmdline
