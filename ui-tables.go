@@ -187,8 +187,8 @@ func generateProcessesTableRows(m model) []table.Row {
 	for _, process := range m.Processes {
 		rowData := make(table.RowData)
 
-		rowData["PId"] = fmt.Sprintf("%d", process.PId)
-		rowData["Priority"] = fmt.Sprintf("%d", process.Priority)
+		rowData["PId"] = process.PId
+		rowData["Priority"] = process.Priority
 		rowData["User"] = process.User
 		rowData["CpuPercentage"] = process.CpuPercentage
 		rowData["Name"] = process.Name
