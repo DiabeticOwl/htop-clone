@@ -2,7 +2,7 @@ module htop-clone
 
 go 1.18
 
-replace github.com/charmbracelet/bubbletea => /home/diabetichunny/Johann/Learning/PRs/bubbletea
+// replace github.com/charmbracelet/bubbletea => /home/diabetichunny/Johann/Learning/PRs/bubbletea
 
 require (
 	github.com/charmbracelet/bubbles v0.13.0
