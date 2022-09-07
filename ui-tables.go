@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math"
+	"runtime"
 	"strconv"
 
 	"github.com/charmbracelet/lipgloss"
@@ -171,10 +172,16 @@ func newProcessesTable(m model, pCount int) table.Model {
 
 	columns := []table.Column{pIdCol, prioCol, uCol, cPcgCol, nCol, exePCol, cmdlineCol}
 
+	// Not showing the exePCol as name and executable path are the same in darwin
+	// based systems.
+	if runtime.GOOS == "darwin" {
+		columns = []table.Column{pIdCol, prioCol, uCol, cPcgCol, nCol, cmdlineCol}
+	}
+
 	return table.
 		New(columns).
 		BorderRounded().
-		WithBaseStyle(styleBase).
+		WithBaseStyle(styleBase.Copy().Align(lipgloss.Left)).
 		WithTargetWidth(m.Width).
 		WithPageSize(pCount).
 		SortByDesc("CpuPercentage").
