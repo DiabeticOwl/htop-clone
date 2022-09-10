@@ -1,6 +1,6 @@
 module htop-clone
 
-go 1.18
+go 1.19
 
 // replace github.com/charmbracelet/bubbletea => /home/diabetichunny/Johann/Learning/PRs/bubbletea
 
