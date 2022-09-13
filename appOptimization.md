@@ -9,25 +9,25 @@ The initial application is built with packages such as bubbletea, bubble-table a
 The first issue found was the animation used in the progress bars. The usage of the application with this feature is shown in the following images:
 
 |  ![htop-clone - Before First Optimization](https://i.imgur.com/EgEKhZ0.png?1) |
-| : - : |
+| :-: |
 | *Running htop-clone with animated progress bars.*  |
 
 | ![time command - Before First Optimization](https://i.imgur.com/BqsdkHy.png) |
-| : - : |
+| :-: |
 | *Result of running the `time` command.* |
 
 | ![top 10 Profiler functions - Before First Optimization](https://i.imgur.com/od9ZoiL.png) |
-| : - : |
+| :-: |
 | *Top 10 functions ran by the program and sorted by their usage of CPU.* |
 
 **By removing the animation we got the following results:**
 
 | ![time command - After First Optimization](https://i.imgur.com/CmLd9OJ.png) |
-| : - : |
+| :-: |
 | *Result of running the `time` command.* |
 
 | ![top 10 Profiler functions - After First Optimization](https://i.imgur.com/s4hiz9v.png) |
-| : - : |
+| :-: |
 | *Top 10 functions ran by the program and sorted by their usage of CPU.* |
 
 ## The Syscall bottleneck
@@ -39,13 +39,13 @@ The profiler revealed a huge bottleneck, the syscall.Syscall6 function. The orig
 By replacing the gopsutil package with a less elegant alternative using the terminal command `ps` from Linux and MacOs further improvements were achievable.
 
 | ![time command - With Syscall bottleneck](https://i.imgur.com/OfE7Bd9.png) |
-| : - : |
+| :-: |
 | *Result of running the `time` command with the shirou/gopsutil/v3/process package.* |
 
 | ![time command - Without Syscall bottleneck](https://i.imgur.com/ijL4fNW.png) |
-| : - : |
+| :-: |
 | *Result of running the `time` command without the shirou/gopsutil/v3/process package.* |
 
 | ![top 10 Profiler functions - Without Syscall bottleneck](https://i.imgur.com/hbuOmdC.png) |
-| : - : |
+| :-: |
 | *Top 10 functions ran by the program and sorted by their usage of CPU, without the shirou/gopsutil/v3/process package.* |
