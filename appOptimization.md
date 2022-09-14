@@ -8,9 +8,9 @@ The initial application is built with packages such as bubbletea, bubble-table a
 
 The first issue found was the animation used in the progress bars. The usage of the application with this feature is shown in the following images:
 
-|  ![htop-clone - Before First Optimization](https://i.imgur.com/EgEKhZ0.png?1) |
+| ![htop-clone - Before First Optimization](https://i.imgur.com/EgEKhZ0.png?1) |
 | :-: |
-| *Running htop-clone with animated progress bars.*  |
+| *Running htop-clone with animated progress bars.* |
 
 | ![time command - Before First Optimization](https://i.imgur.com/BqsdkHy.png) |
 | :-: |

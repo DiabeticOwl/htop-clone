@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"math"
-	"os"
 	"runtime"
 
 	"github.com/charmbracelet/lipgloss"
@@ -33,11 +32,11 @@ const (
 var (
 	styleBase = (lipgloss.
 			NewStyle().
-		// Foreground(lipgloss.Color("#c1d0e8")).
+			Foreground(lipgloss.Color("#92DCE5")).
 		// BorderBackground(lipgloss.Color("#7a89a3")).
 		Align(lipgloss.Center))
 
-	standardRowStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("255"))
+	standardRowStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#CEEFF3"))
 )
 
 func newCpuTable(m model) table.Model {
@@ -54,7 +53,8 @@ func newCpuTable(m model) table.Model {
 }
 
 func generateCpuTableRows(m model) []table.Row {
-	valStr := fmt.Sprintf("%-1s", " CPU #%02d: ") + "%s"
+	cpuFmt := "CPU #%02d:"
+	// valStr := fmt.Sprintf("%-1s", " CPU #%02d: ") + "%s"
 	rowCount := int(math.Ceil(float64(len(m.CpuInfo)) / cpuTableMaxColumnAmount))
 
 	if rowCount*cpuTableMaxColumnAmount != len(m.CpuInfo) {
@@ -63,7 +63,6 @@ func generateCpuTableRows(m model) []table.Row {
 
 		panic(s)
 	}
-	ls := ""
 
 	var rows []table.Row
 	for i := 0; i < rowCount; i++ {
@@ -74,28 +73,16 @@ func generateCpuTableRows(m model) []table.Row {
 				// in one column.
 				index := i + c*rowCount
 
-				s := fmt.Sprintf(valStr, index, m.cpuProgresses[index].ViewAs(m.CpuInfo[i]/100))
-				l := len(s)
-				ls += fmt.Sprintf("'%s - %d'\n", s, l)
-				r += fmt.Sprintf(valStr, index, m.cpuProgresses[index].ViewAs(m.CpuInfo[i]/100))
+				r += fmt.Sprintf("%s %s", standardRowStyle.SetString(fmt.Sprintf(cpuFmt, index)).String(), m.cpuProgresses[index].ViewAs(m.CpuInfo[i]/100))
 			} else {
-				s := fmt.Sprintf(valStr, i, m.cpuProgresses[i].ViewAs(m.CpuInfo[i]/100))
-				l := len(s)
-				ls += fmt.Sprintf("'%s - %d'\n", s, l)
-
-				r += fmt.Sprintf(valStr, i, m.cpuProgresses[i].ViewAs(m.CpuInfo[i]/100))
+				r += fmt.Sprintf("%s %s", standardRowStyle.SetString(fmt.Sprintf(cpuFmt, i)).String(), m.cpuProgresses[i].ViewAs(m.CpuInfo[i]/100))
 			}
 		}
 
 		nRow := table.NewRow(table.RowData{
 			columnKeyCpuTable: r,
-		}) //.WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color(strconv.Itoa(255 - i*3))))
+		})
 		rows = append(rows, nRow)
-	}
-
-	err := os.WriteFile("./revisando.txt", []byte(ls), 0644)
-	if err != nil {
-		panic(err)
 	}
 
 	return rows
@@ -118,10 +105,10 @@ func newMemoryTable(m model) table.Model {
 
 func generateMemoryTableRows(m model) []table.Row {
 	vMemoryProg := m.memoryProgresses[0].ViewAs(m.VMemoryInfo.UsedPercent / 100)
-	vMemoryView := fmt.Sprintf("%s %.2f GB/%.2f GB", vMemoryProg, m.VMemoryInfo.Used, m.VMemoryInfo.Total)
+	vMemoryView := fmt.Sprintf("%s %s", standardRowStyle.SetString(fmt.Sprintf("%.2f GB/%.2f GB", m.VMemoryInfo.Used, m.VMemoryInfo.Total)).String(), vMemoryProg)
 
 	sMemoryProg := m.memoryProgresses[1].ViewAs(m.SMemoryInfo.UsedPercent / 100)
-	sMemoryView := fmt.Sprintf("%s %.2f GB/%.2f GB", sMemoryProg, m.SMemoryInfo.Used, m.SMemoryInfo.Total)
+	sMemoryView := fmt.Sprintf("%s %s", standardRowStyle.SetString(fmt.Sprintf("%.2f GB/%.2f GB", m.SMemoryInfo.Used, m.SMemoryInfo.Total)).String(), sMemoryProg)
 
 	rows := []table.Row{
 		table.NewRow(table.RowData{

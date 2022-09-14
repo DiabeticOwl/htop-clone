@@ -56,11 +56,12 @@ func NewModel() model {
 	// Creating progress bars for the Cpu and Memory tables.
 	opts := []progress.Option{
 		progress.WithDefaultGradient(),
+		progress.WithSolidFill("#207883"),
 	}
 	for range teaModel.CpuInfo {
 		pBar := progress.New(opts...)
-		pBar.PercentFormat = "%05.2f%% "
-		pBar.PercentageRightPosition = false
+		pBar.PercentFormat = " %05.2f%% "
+		pBar.PercentageStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#EFFAFB"))
 
 		teaModel.cpuProgresses = append(teaModel.cpuProgresses, pBar)
 	}
