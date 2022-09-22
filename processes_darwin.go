@@ -30,6 +30,8 @@ func getProcessesInfo() []processInfo {
 	// prio    : Priority assigned to the process.
 	// args    : The full command of the process with all it's arguments.
 
+	// Each number passed describes the total length of the column in the
+	// command's result. Length is then used for slicing the desired values.
 	keywords := fmt.Sprintf("pid=%s,user=%s,comm=%s,pcpu,pri,command=%s,args", smallW, largeW, hugeW, hugeW)
 	args := []string{"-axcro", keywords}
 
@@ -38,7 +40,9 @@ func getProcessesInfo() []processInfo {
 		panic(err)
 	}
 
-	// The first line is the column names
+	// The first line is the column names.
+	// Removes the last newline and splits the entire string by the remaining.
+	// The result is a process's info in the given format.
 	procStrings := strings.Split(strings.TrimSuffix(string(output), "\n"), "\n")[1:]
 	for _, line := range procStrings {
 		pId, err := strconv.ParseInt(strings.TrimSpace(line[:10]), 10, 32)
