@@ -6,19 +6,19 @@ import (
 	"github.com/shirou/gopsutil/v3/mem"
 )
 
-// TODO: Determine which constant better suits a given value.
 const (
-	_ = iota // Underscore means that it will be ignored.
-	// This creates a block of constants that will return
-	// 1 * 2^(10*iota). This formula is the description of
-	// bytes in the binary system used by computers.
+	_ = iota
+	// Bit shift to get constants of 1,024 bytes, 1,048,576 bytes, etc.
+	// The formula is: 1 * 2^(10*iota).
 	KB = 1 << (10 * iota)
 	MB
 	GB
 )
 
 var (
-	desiredFileSystems = map[string]struct{}{
+	// Displaying relevant file systems. Irrelevant may be
+	// read only (like squashfs), tracing (like tracefs), etc.
+	fsFilter = map[string]struct{}{
 		"ext4":    {},
 		"vfat":    {},
 		"fuseblk": {},
@@ -53,13 +53,15 @@ type processInfo struct {
 	ExeP          string
 }
 
-func extractCpuInfo() []float64 {
+// getCpuInfo returns the information of the cores in the system.
+func getCpuInfo() []float64 {
 	cpuInfo, _ := cpu.Percent(0, true)
 	return cpuInfo
 }
 
-// extractMemoryInfo returns virtual and swap memory.
-func extractMemoryInfo() (memoryInfo, memoryInfo) {
+// getMemoryInfo returns virtual and swap memory.
+func getMemoryInfo() (memoryInfo, memoryInfo) {
+	// Ignoring errors because of unaccounted ones in these methods.
 	vm, _ := mem.VirtualMemory()
 	sm, _ := mem.SwapMemory()
 
@@ -78,26 +80,30 @@ func extractMemoryInfo() (memoryInfo, memoryInfo) {
 	return vMemoryInfo, sMemoryInfo
 }
 
-func extractDiskInfo() []diskInfo {
+// getDiskInfo returns an array of the information of relevant disks in the
+// system.
+func getDiskInfo() []diskInfo {
 	var disks []diskInfo
 
 	dps, _ := disk.Partitions(true)
 	for _, dsk := range dps {
-		if _, ok := desiredFileSystems[dsk.Fstype]; ok {
-			mount := dsk.Mountpoint
-			dskUsg, _ := disk.Usage(mount)
-
-			diskInfo := diskInfo{
-				FsType:    dsk.Fstype,
-				Device:    dsk.Device,
-				MountPath: mount,
-				TotalSize: float64(dskUsg.Total) / GB,
-				FreeSize:  float64(dskUsg.Free) / GB,
-				UsedSize:  float64(dskUsg.Used) / GB,
-			}
-
-			disks = append(disks, diskInfo)
+		if _, ok := fsFilter[dsk.Fstype]; !ok {
+			continue
 		}
+
+		mount := dsk.Mountpoint
+		dskUsg, _ := disk.Usage(mount)
+
+		diskInfo := diskInfo{
+			FsType:    dsk.Fstype,
+			Device:    dsk.Device,
+			MountPath: mount,
+			TotalSize: float64(dskUsg.Total) / GB,
+			FreeSize:  float64(dskUsg.Free) / GB,
+			UsedSize:  float64(dskUsg.Used) / GB,
+		}
+
+		disks = append(disks, diskInfo)
 	}
 
 	return disks

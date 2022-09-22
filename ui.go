@@ -50,7 +50,7 @@ type model struct {
 func NewModel() model {
 	// Initial model instance with CpuInfo filled.
 	teaModel := model{
-		CpuInfo: extractCpuInfo(),
+		CpuInfo: getCpuInfo(),
 	}
 
 	// Creating progress bars for the Cpu and Memory tables.
@@ -141,7 +141,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Batch(cmds...)
 		}
 
-		// Progress bar width.
 		pWidth := int(float64(msg.Width) * 0.15)
 
 		for i := range m.cpuProgresses {
@@ -175,10 +174,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Update each table each "tick".
 	case tickMsg:
-		m.CpuInfo = extractCpuInfo()
-		m.VMemoryInfo, m.SMemoryInfo = extractMemoryInfo()
-		m.DisksInfo = extractDiskInfo()
-		m.Processes = extractProcessesInfo()
+		m.CpuInfo = getCpuInfo()
+		m.VMemoryInfo, m.SMemoryInfo = getMemoryInfo()
+		m.DisksInfo = getDiskInfo()
+		m.Processes = getProcessesInfo()
 
 		m.cpuTable = m.cpuTable.WithRows(generateCpuTableRows(m))
 		m.memoryTable = m.memoryTable.WithRows(generateMemoryTableRows(m))
@@ -190,7 +189,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.disksTable = m.disksTable.WithRows(generateDisksTableRows(m)).WithPageSize(pCount)
 
-		// Added "tick" to the final array of commands to run.
 		cmds = append(cmds, tick())
 
 		return m, tea.Batch(cmds...)
@@ -206,7 +204,6 @@ func (m model) View() string {
 	if m.Height < minimumHeightOneTable {
 		s = "\nWindow size is too small to show something."
 	} else {
-		// Render each component in the UI with its given style.
 		s = lipgloss.NewStyle().Padding(0, 1, 1).Render(m.cpuTable.View())
 		switch h := m.Height; {
 		case h >= minimumHeightTwoTables && h < minimumHeightThreeTables:

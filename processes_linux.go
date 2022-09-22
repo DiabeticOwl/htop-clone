@@ -6,10 +6,9 @@ import (
 	"strings"
 )
 
-func extractProcessesInfo() []processInfo {
+func getProcessesInfo() []processInfo {
 	var processes []processInfo
 
-	// Command to run.
 	cmd := "ps"
 
 	// Arguments for the command. Each comma adds a space to the output.

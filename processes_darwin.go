@@ -14,19 +14,18 @@ const (
 	hugeW  = largeW + largeW
 )
 
-func extractProcessesInfo() []processInfo {
+func getProcessesInfo() []processInfo {
 	var processes []processInfo
 
-	// Command to run.
 	cmd := "ps"
 
-	// Arguments for the command. Each comma adds a space to the output.
+	// Arguments for ps. Each comma adds a space to the output.
 	// ax      : Lists all processes in the system.
 	// c       : Makes comm and command keywords the same. Used for slicing and cleaning purposes.
 	// o       : Gives a specific format to each process.
 	// pid     : Process ID.
 	// comm    : Name of the process.
-	// command : Name of the process. (Kept to maintain uniformity with other operating systems.) 
+	// command : Name of the process. (Kept to maintain uniformity with other operating systems.)
 	// pcpu    : Percentage of the CPU used by the process.
 	// prio    : Priority assigned to the process.
 	// args    : The full command of the process with all it's arguments.
@@ -39,11 +38,10 @@ func extractProcessesInfo() []processInfo {
 		panic(err)
 	}
 
-	// Removes the last newline and splits the entire string by the remaining.
-	// The result is a process's info in the given format.
+	// The first line is the column names
 	procStrings := strings.Split(strings.TrimSuffix(string(output), "\n"), "\n")[1:]
 	for _, line := range procStrings {
-		pId, err := (strconv.ParseInt(strings.TrimSpace(line[:10]), 10, 32))
+		pId, err := strconv.ParseInt(strings.TrimSpace(line[:10]), 10, 32)
 		if err != nil {
 			panic(err)
 		}
@@ -51,7 +49,7 @@ func extractProcessesInfo() []processInfo {
 		if err != nil {
 			panic(err)
 		}
-		prio, err := (strconv.ParseInt(strings.TrimSpace(line[169:172]), 10, 32))
+		prio, err := strconv.ParseInt(strings.TrimSpace(line[169:172]), 10, 32)
 		if err != nil {
 			panic(err)
 		}
