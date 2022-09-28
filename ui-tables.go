@@ -73,9 +73,8 @@ func generateCpuTableRows(m model) []table.Row {
 		panic(s)
 	}
 
-	// Since each bubble-table row needs to be returned with all the information
-	// once we need to populate each with the information of the corresponding
-	// columns. For example, using a 12 core CPU and 4 columns each row:
+	// Each bubble-tea row is a string containing all the contents of the columns.
+	// For example, using a 12 core CPU and 4 columns each row:
 	// Row 0 : "CPU #00 m.cpuProgresses[0] CPU #03 m.cpuProgresses[3] CPU #06 m.cpuProgresses[6] CPU #09 m.cpuProgresses[9]"
 	// Row 1 : "CPU #01 m.cpuProgresses[1] CPU #04 m.cpuProgresses[4] CPU #07 m.cpuProgresses[7] CPU #10 m.cpuProgresses[10]"
 	// Row 2 : "CPU #02 m.cpuProgresses[2] CPU #05 m.cpuProgresses[5] CPU #08 m.cpuProgresses[8] CPU #11 m.cpuProgresses[11]"
