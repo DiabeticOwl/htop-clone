@@ -6,6 +6,9 @@ import (
 	"strings"
 )
 
+// getProcessesInfo, due to the version difference of the ps command between
+// Darwin and Linux based systems, uses dynamic columns widths to display the
+// results. It also uses different arguments described in the function body.
 func getProcessesInfo() []processInfo {
 	var processes []processInfo
 
