@@ -8,7 +8,9 @@ import (
 )
 
 const (
-	// Columns width.
+	// On Darwin based systems, the ps command will return each column with a
+	// width equal to the column name itself. Since the names are not used
+	// dummies ones with specific sizes are given to the command.
 	smallW = "1234567890"
 	largeW = smallW + smallW + smallW + smallW + smallW
 	hugeW  = largeW + largeW
