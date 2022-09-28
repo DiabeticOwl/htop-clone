@@ -29,9 +29,9 @@ func getProcessesInfo() []processInfo {
 		panic(err)
 	}
 
+	// The result is a process's info in the given format.
 	// The first line is the column names.
 	// Removes the last newline and splits the entire string by the remaining.
-	// The result is a process's info in the given format.
 	procStrings := strings.Split(strings.TrimSuffix(string(output), "\n"), "\n")[1:]
 	for _, line := range procStrings {
 		pId, err := strconv.Atoi(strings.TrimSpace(line[:10]))
