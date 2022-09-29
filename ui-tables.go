@@ -39,8 +39,8 @@ var (
 	standardRowStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#CEEFF3"))
 )
 
-// newCpuTable will instantiate the CPU information table with its assigned
-// columns. This should be ran only when the application starts or it resizes.
+// newCpuTable instantiates the CPU information table with its assigned
+// columns. This is called only when the application starts or it resizes.
 func newCpuTable(m model) table.Model {
 	columns := []table.Column{
 		table.NewFlexColumn(columnKeyCpuTable, cpuTableTitle,
@@ -54,20 +54,22 @@ func newCpuTable(m model) table.Model {
 		WithTargetWidth(m.Width)
 }
 
-// generateCpuTableRows will generate all the rows that will be rendered into
-// the CPU information table. This should be ran each time the application updates.
+// generateCpuTableRows generates all the rows that will be rendered into
+// the CPU information table. This is called each time the application updates.
 func generateCpuTableRows(m model) []table.Row {
 	cpuFmt := "CPU #%02d:"
 	// The number of cores divided by the number of chosen columns will be
-	// ceiled in order to calculate a fixed number of rows in which display
+	// ceiled in order to calculate a fixed number of rows in which to display
 	// all the CPU info in an uniform manner.
 	rowCount := int(math.Ceil(float64(len(m.CpuInfo)) / cpuTableMaxColumnAmount))
 
 	// When the number of cpuTableMaxColumnAmount doesn't satisfy the equation
 	// len(m.CpuInfo) / rowCount = cpuTableMaxColumnAmount, the program can't
 	// display all cores properly.
+	// TODO: Support core counts that are not divisible by 4.
 	if rowCount*cpuTableMaxColumnAmount != len(m.CpuInfo) {
 		s := "The amount of columns or rows is incorrect.\n"
+		s += "TODO: Support core counts that are not divisible by 4.\n"
 		s = fmt.Sprintf("%sThe product of both should be %d.", s, len(m.CpuInfo))
 
 		panic(s)
@@ -87,9 +89,17 @@ func generateCpuTableRows(m model) []table.Row {
 				// in one column.
 				index := i + c*rowCount
 
-				r += fmt.Sprintf("%s %s", standardRowStyle.SetString(fmt.Sprintf(cpuFmt, index)).String(), m.cpuProgresses[index].ViewAs(m.CpuInfo[i]/100))
+				r += fmt.Sprintf(
+					"%s %s",
+					standardRowStyle.SetString(fmt.Sprintf(cpuFmt, index)).String(),
+					m.cpuProgresses[index].ViewAs(m.CpuInfo[i]/100),
+				)
 			} else {
-				r += fmt.Sprintf("%s %s", standardRowStyle.SetString(fmt.Sprintf(cpuFmt, i)).String(), m.cpuProgresses[i].ViewAs(m.CpuInfo[i]/100))
+				r += fmt.Sprintf(
+					"%s %s",
+					standardRowStyle.SetString(fmt.Sprintf(cpuFmt, i)).String(),
+					m.cpuProgresses[i].ViewAs(m.CpuInfo[i]/100),
+				)
 			}
 		}
 
@@ -102,8 +112,8 @@ func generateCpuTableRows(m model) []table.Row {
 	return rows
 }
 
-// newMemoryTable will instantiate the RAM information table with its assigned
-// columns. This should be ran only when the application starts or it resizes.
+// newMemoryTable instantiates the RAM information table with its assigned
+// columns. This is called only when the application starts or it resizes.
 func newMemoryTable(m model) table.Model {
 	columns := []table.Column{
 		table.NewFlexColumn(columnKeyVirtualMemory, columnKeyVirtualMemoryTitle,
@@ -120,7 +130,7 @@ func newMemoryTable(m model) table.Model {
 }
 
 // generateMemoryTableRows will generate all the rows that will be rendered into
-// the RAM information table. This should be ran each time the application updates.
+// the RAM information table. This is called each time the application updates.
 func generateMemoryTableRows(m model) []table.Row {
 	vMemoryProg := m.memoryProgresses[0].ViewAs(m.VMemoryInfo.UsedPercent / 100)
 	vMemoryView := fmt.Sprintf("%s %s", standardRowStyle.SetString(fmt.Sprintf("%.2f GB/%.2f GB", m.VMemoryInfo.Used, m.VMemoryInfo.Total)).String(), vMemoryProg)
@@ -138,8 +148,8 @@ func generateMemoryTableRows(m model) []table.Row {
 	return rows
 }
 
-// newDisksTable will instantiate the disks information table with its assigned
-// columns. This should be ran only when the application starts or it resizes.
+// newDisksTable instantiates the disks information table with its assigned
+// columns. This is called only when the application starts or it resizes.
 func newDisksTable(m model) table.Model {
 	fsTypeCol := table.NewFlexColumn("FsType", "File System Type", columnDefaultFlexFactor)
 	deviceCol := table.NewFlexColumn("Device", "Device", columnDefaultFlexFactor)
@@ -160,7 +170,7 @@ func newDisksTable(m model) table.Model {
 }
 
 // generateDisksTableRows will generate all the rows that will be rendered into
-// the disks information table. This should be ran each time the application updates.
+// the disks information table. This is called each time the application updates.
 func generateDisksTableRows(m model) []table.Row {
 	var rows []table.Row
 
@@ -181,8 +191,8 @@ func generateDisksTableRows(m model) []table.Row {
 	return rows
 }
 
-// newProcessesTable will instantiate the processes information table with its
-// assigned columns. This should be ran only when the application starts or it
+// newProcessesTable instantiates the processes information table with its
+// assigned columns. This is called only when the application starts or it
 // resizes.
 func newProcessesTable(m model, pCount int) table.Model {
 	pIdCol := table.NewFlexColumn("PId", "Process ID", columnDefaultFlexFactor)
@@ -215,7 +225,7 @@ func newProcessesTable(m model, pCount int) table.Model {
 }
 
 // generateProcessesTableRows will generate all the rows that will be rendered
-// into the processes information table. This should be ran each time the
+// into the processes information table. This is called each time the
 // application updates.
 func generateProcessesTableRows(m model) []table.Row {
 	var rows []table.Row
