@@ -15,7 +15,7 @@ files. The packages used is [bubble-table](https://github.com/Evertras/bubble-ta
 ### UI
 
 * **ui.go:** This file describes the UI/UX that the user will interact with.
-Here the structure of each table to bo shown is instantiated and updated.
+Here the structure of each table to be shown is instantiated and updated.
 
 * **ui-tables.go:** This file stores the functions used by ui.go when creating
 and populating each table.
